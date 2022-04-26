@@ -110,58 +110,81 @@ void MyModel::clearMatches(QMap<QString, QList<QList<int>>> &matches){
 }
 
 void MyModel::removeMatches(){
-    if(m_matchesToRemove.size() == 0){
-        return;
-    }
-    QSet<int> set;
-    for(auto& a: m_matchesToRemove){
-        for(int index: a){
-            set.insert(index);
-        }
-    }
-    qDebug() << set;
-    QList<int> matches = set.values();
-    for(int i = 0; i < matches.size()-1; i++){
-        int min = i;
-        for(int j = i+1; j < matches.size();j++){
-            if(matches[j] < matches[min]){
-               min = j;
+    qDebug() << "start";
+    auto elementIsEmpty = [this](int index){
+        return m_data[index].m_state == "deleted";
+    };
+
+    for(int j = 0; j < m_columnsCount;j++){
+//        qDebug() << 1;
+        int deletedCount = 0;
+        int i;
+        int first;
+        for(i = m_rowsCount-1;i >= 0; i--){
+//            qDebug() << 2;
+            first = i*m_columnsCount+j;
+            if(elementIsEmpty(first)){
+//                qDebug() << 3;
+                deletedCount++;
+                beginRemoveRows(QModelIndex(),first,first);
+                m_data.removeAt(first);
+                endRemoveRows();
+            }
+            else if(deletedCount != 0){
+//                qDebug() << 4;
+                int second = (i+deletedCount)*m_columnsCount+j-deletedCount;
+                beginMoveRows(QModelIndex(),first,first,QModelIndex(),second+1);
+                m_data.move(first,second);
+                endMoveRows();
             }
         }
-        int tmp = matches[i];
-        matches[i] = matches[min];
-        matches[min] = tmp;
+//        qDebug() << "deletedCount: " << deletedCount;
+        for(i = 0;i < deletedCount; i++){
+//            qDebug() << 5;
+            first = i*m_columnsCount+j;
+            beginInsertRows(QModelIndex(),first,first);
+            m_data.insert(first,m_data[std::rand()%m_data.size()].m_color);
+            endInsertRows();
+        }
     }
-    qDebug() << matches;
-    for(int i = 0; i < matches.count(); i++){
-        beginRemoveRows(QModelIndex(),matches[i]-i,matches[i]-i);
-        m_data.removeAt(matches[i]-i);
-        endRemoveRows();
-    }
+
+//    for(int i = 0; i < matches.count(); i++){
+//        beginRemoveRows(QModelIndex(),matches[i]-i,matches[i]-i);
+//        m_data.removeAt(matches[i]-i);
+//        endRemoveRows();
+//        qDebug() << i;
+//    }
 }
 
-bool MyModel::swap(int a, int b){
+QList<int> MyModel::swap(int a, int b){
     if(a >= m_data.size() || b >= m_data.size())
-        return false;
+        return QList<int>();
     int j = a% m_columnsCount;
     int i = a/m_columnsCount;
     int first, second;
-    auto matchIsPossible = [this](int first,int second) -> bool{
+    auto possibleMatches = [this](int first,int second) -> QList<int>{
         QList<Element> tmpData = m_data;
         QString tmp = tmpData[first].m_color;
         tmpData[first] = tmpData[second];
         tmpData[second] = tmp;
-        m_matchesToRemove = hasMatches(0,tmpData.size()-1,tmpData);
-        if(m_matchesToRemove.size() == 0){
-            return false;
+        QList<QList<int>> listOfMatchLists = hasMatches(0,tmpData.size()-1,tmpData);
+        QList<int> matches;
+        for(auto& list: listOfMatchLists){
+            for(int index: list){
+                if(matches.contains(index) == false){
+                    matches.append(index);
+                }
+            }
         }
-        return true;
+        return matches;
     };
+    QList<int> matchesToRemove;
     if(b == a-m_columnsCount && i>0){                   //up+
             first = j+i*m_columnsCount;
             second = j+((i-1)*m_columnsCount);
-            if(!matchIsPossible(first,second)){
-                return false;
+            matchesToRemove = possibleMatches(first,second);
+            if(matchesToRemove.size() == 0){
+                return matchesToRemove;
             }
             beginMoveRows(QModelIndex(), first,first,QModelIndex(),second);
                 m_data.move(first,second);
@@ -171,36 +194,38 @@ bool MyModel::swap(int a, int b){
             beginMoveRows(QModelIndex(),first,first,QModelIndex(),second);
                 m_data.move(first,second-1);
             endMoveRows();
-            return true;
+            return matchesToRemove;
     }
     if(b == a-1 && j>0){                                //left+
             first = j+(i*m_columnsCount);
             second = (j-1)+i*m_columnsCount;
-            if(!matchIsPossible(first,second)){
-                return false;
+            matchesToRemove = possibleMatches(first,second);
+            if(matchesToRemove.size() == 0){
+                return matchesToRemove;
             }
             beginMoveRows(QModelIndex(),first,first,QModelIndex(),second);
                 m_data.move(first,second);
             endMoveRows();
-            return true;
+            return matchesToRemove;
     }
-
     if(b == a+1 && j<m_columnsCount-1){                 //right+
             first = j+i*m_columnsCount;
             second = j+1+i*m_columnsCount+1;
-            if(!matchIsPossible(first,second-1)){
-                return false;
+            matchesToRemove = possibleMatches(first,second-1);
+            if(matchesToRemove.size() == 0){
+                return matchesToRemove;
             }
             beginMoveRows(QModelIndex(),first,first,QModelIndex(),second);
                 m_data.move(first,second-1);
             endMoveRows();
-            return true;
+            return matchesToRemove;
     }
     if(b == a+m_columnsCount && i<m_columnsCount-1){     //down+
             first = j+i*m_columnsCount;
             second = j+((i+1)*m_columnsCount);
-            if(!matchIsPossible(first,second)){
-                return false;
+            matchesToRemove = possibleMatches(first,second);
+            if(matchesToRemove.size() == 0){
+                return matchesToRemove;
             }
             beginMoveRows(QModelIndex(),first,first,QModelIndex(),second);
                 m_data.move(first,second-1);
@@ -210,9 +235,9 @@ bool MyModel::swap(int a, int b){
             beginMoveRows(QModelIndex(),first,first,QModelIndex(),second);
                 m_data.move(first,second);
             endMoveRows();
-            return true;
+            return matchesToRemove;
     }
-    return false;
+    return matchesToRemove;
 }
 
 bool MyModel::pressOn(int index){
@@ -221,8 +246,11 @@ bool MyModel::pressOn(int index){
             m_lastChoise = index;
         }
         else{
-            if(swap(m_lastChoise,index)){
-                emit rightChoise(m_lastChoise,index,m_matchesToRemove);
+            QList<int> matchesToRemove = swap(m_lastChoise,index);
+            if(matchesToRemove.size() > 0){
+                setState(m_lastChoise, "nonSqueezed");
+                setState(index, "nonSqueezed");
+                emit rightChoise(matchesToRemove);
             }
             else{
                 emit wrongChoise(m_lastChoise,index);

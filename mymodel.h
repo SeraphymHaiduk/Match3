@@ -37,17 +37,16 @@ signals:
     void columnsCountChanged() const;
 
     void wrongChoise(int firstChoise, int secondChoise);
-    void rightChoise(int firstChoise, int secondChoise, QList<QList<int>> matchesToRemove);
+    void rightChoise(QList<int> matchesToRemove);
 private:
     QList<Element> m_data;
     int m_lastChoise = -1;
-    QList<QList<int>> m_matchesToRemove;
 
     int m_rowsCount;
     int m_columnsCount;
 
-    void populate();;
-    bool swap(int a, int b);
+    void populate();
+    QList<int> swap(int a, int b);
     void clearMatches(QMap<QString,QList<QList<int>>> &matches);
     QList<QList<int>> hasMatches(int leftTop, int rightBottom, const QList<Element>& area);
 };

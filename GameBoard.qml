@@ -10,6 +10,14 @@ GridView{
     }
     Component.onCompleted: console.log(root.width)
     interactive: false
+    add:Transition{
+        NumberAnimation{
+            properties: "y"
+            from: -cellHeight-(root.height-to)
+            duration: 400
+        }
+    }
+
     move:Transition{
         NumberAnimation{
             properties: "x,y"
@@ -24,17 +32,12 @@ GridView{
     }
     Connections{
         target: root.model
-        function onRightChoise(firstChoise, secondChoise, matchesToRemove){
-            model.setState(firstChoise,"nonSqueezed")
-            model.setState(secondChoise,"nonSqueezed")
-            console.log(matchesToRemove)
-            for(var a = 0; a < matchesToRemove.length;a++){
-                for(var i= 0; i< matchesToRemove[a].length; i++){
-                    console.log(matchesToRemove[a][i])
-                    model.setState(matchesToRemove[a][i],"deleted")
-                }
+        function onRightChoise(matchesToRemove){
+            console.log("matchesToRemove:"+matchesToRemove)
+            for(var i = 0; i < matchesToRemove.length;i++){
+                console.log("set deleted to ", matchesToRemove[i])
+                model.setState(matchesToRemove[i],"deleted")
             }
-
         }
         function onWrongChoise(firstChoise, secondChoise){
             model.setState(firstChoise,"wrong")
