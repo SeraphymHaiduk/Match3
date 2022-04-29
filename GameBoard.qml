@@ -1,4 +1,5 @@
 import QtQuick 2.0
+import QtQml 2.15
 import QtQuick.Controls 2.15
 import CppModel 1.0
 
@@ -10,39 +11,70 @@ GridView{
     }
     Component.onCompleted: console.log(root.width)
     interactive: false
+    property int moveDuration: 400
+    property int pressDuration: 200
+    property int unpressDuration: pressDuration
+    property int unpressWrongDuration: pressDuration*3
+    property int deleteDuration: pressDuration*2
     add:Transition{
         NumberAnimation{
             properties: "y"
             from: -cellHeight-(root.height-to)
-            duration: 400
+            duration: root.moveDuration
         }
     }
-
     move:Transition{
+        id: moveTransition
         NumberAnimation{
             properties: "x,y"
-            duration:400
+            duration: root.moveDuration
         }
     }
     displaced : Transition {
         NumberAnimation{
             properties: "x,y"
-            duration: 400
+            duration: root.moveDuration
         }
     }
+    Timer{
+        id: animationTimer
+        repeat: false
+        property var functionToExec
+        function exec(duration, foo){
+            animationTimer.functionToExec = foo
+            animationTimer.interval = duration
+            animationTimer.start()
+        }
+        onTriggered: {
+            functionToExec()
+        }
+    }
+
     Connections{
         target: root.model
-        function onRightChoise(matchesToRemove){
-            console.log("matchesToRemove:"+matchesToRemove)
-            for(var i = 0; i < matchesToRemove.length;i++){
-                console.log("set deleted to ", matchesToRemove[i])
-                model.setState(matchesToRemove[i],"deleted")
-            }
+        function onMatchesHappened(matches){
+            console.log("matches happened", matches)
+            animationTimer.exec(root.moveDuration>root.unpressDuration? root.moveDuration : root.unpressDuration,function(){
+                for(var i = 0; i < matches.length;i++){
+                    model.setState(matches[i],"deleted")
+                }
+                animationTimer.exec(root.deleteDuration,function(){
+                    root.model.removeMatches()
+                    root.model.checkNewMatches()
+                })
+            })
         }
+
+        function onRightChoise(firstChoise,secondChoise){
+            root.model.setState(firstChoise,"notPressed")
+            root.model.setState(secondChoise,"notPressed")
+        }
+
         function onWrongChoise(firstChoise, secondChoise){
             model.setState(firstChoise,"wrong")
             model.setState(secondChoise,"wrong")
         }
+
     }
 
     delegate: Item{
@@ -58,10 +90,11 @@ GridView{
             color: colorName
             visible: true
             clip:true
+            anchors.margins: tile.width*0.05
             state: model.state
             states: [
                 State{
-                    name: "nonSqueezed"
+                    name: "unpressed"
                     PropertyChanges {
                         target: circle
                         anchors.margins: tile.width*0.05
@@ -69,7 +102,7 @@ GridView{
                     }
                 },
                 State{
-                    name: "squeezed"
+                    name: "pressed"
                     PropertyChanges{
                         target: circle
                         anchors.margins: tile.width*0.15
@@ -95,12 +128,11 @@ GridView{
 
             ]
             transitions: [
-                Transition {
-                    id: squeezTransition
-                    to: "squeezed"
+                Transition {        //press
+                    to: "pressed"
                     NumberAnimation{
                         properties: "anchors.margins"
-                        duration:200
+                        duration: root.pressDuration
                         easing.type: Easing.OutCirc
                     }
                     onRunningChanged: {
@@ -109,52 +141,46 @@ GridView{
                         }
                     }
                 },
-                Transition {
-                    to: "nonSqueezed"
+                Transition {        //unpress
+                    to: "notpressed"
                     NumberAnimation{
                         properties: "anchors.margins"
-                        duration: 200
+                        duration: root.unpressDuration
                         easing.type: Easing.InCirc
                     }
                 },
-                Transition {
+                Transition {        //wrong
                     to: "wrong"
                     NumberAnimation {
                         properties: "anchors.margins"
-                        duration: 600
+                        duration: root.unpressWrongDuration
                         easing.type: Easing.OutElastic
                     }
                 },
-                Transition{
+                Transition{         //delete
                     to: "deleted"
                     NumberAnimation{
                         properties: "anchors.margins,opacity"
-                        duration: 400
-
-                    }
-                    onRunningChanged: {
-                        if(running === false){
-                            console.log("removeMatch")
-                            root.model.removeMatches()
-                        }
+                        duration: root.deleteDuration
                     }
                 }
 
             ]
-            Label{
-               anchors.centerIn: parent
-               text: index + colorName
-            }
+//            Label{
+//               anchors.centerIn: parent
+//               text: index + colorName + "\n" + model.state
+//            }
             MouseArea{
                 id: mouseArea
                 anchors.fill: parent
+                enabled: model.state === "deleted" || moveTransition.running ? false : true
                 hoverEnabled: false
                 onPressed: {
-                    if(model.state === "squeezed"){
-                        model.state = "nonSqueezed"
+                    if(model.state === "pressed"){
+                        root.model.setState(index,"notpressed")
                     }
                     else{
-                        model.state = "squeezed"
+                        root.model.setState(index,"pressed");
                     }
                 }
             }

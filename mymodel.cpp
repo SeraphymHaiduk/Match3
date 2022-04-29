@@ -8,7 +8,9 @@
 MyModel::MyModel(QObject* parent) : QAbstractListModel(parent)
 {
     qDebug() << "Model created";
-    populate();
+    do{
+        populate();
+    }while(!matchesIsPossible());
     qDebug() << "data size: " << m_data.size();
 
 }
@@ -26,22 +28,21 @@ QVariant MyModel::data(const QModelIndex& index, int role) const{
     }
     switch (role){
     case ColorRole: return m_data.at(index.row()).m_color;
-    case StateRole: return m_data.at(index.row()).m_state;
+    case StateRole: {
+        ElementState state = m_data.at(index.row()).m_state;
+        switch (state) {
+        case ElementState::Pressed: return "pressed";
+        case ElementState::NotPressed: return "notpressed";
+        case ElementState::Wrong: return "wrong";
+        case ElementState::Deleted: return "deleted";
+        default: qDebug() << QString("%1 state case not implemented in this function").arg(int(state));
+            return QVariant();
+        }
+    }
     default: return QVariant();
     }
 }
 
-bool MyModel::setData(const QModelIndex &index, const QVariant& value, int role){
-    if(!index.isValid()){
-        return false;
-    }
-    switch(role){
-    case StateRole: m_data[index.row()].m_state = value.toString();
-        dataChanged(index,index,QVector<int>() << StateRole);
-        return true;
-    default: return false;
-    }
-}
 QHash <int,QByteArray> MyModel::roleNames() const{
     QHash<int,QByteArray> roles = QAbstractListModel::roleNames();
     roles[ColorRole] = "colorName";
@@ -51,31 +52,59 @@ QHash <int,QByteArray> MyModel::roleNames() const{
 
 
 void MyModel::populate(){
-    QFile file("config.json");
-    if(!file.open(QIODevice::ReadOnly)){
-       qDebug() << "Cannot open config.json";
-    }
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll().data());
-    QJsonObject obj = doc.object();
-    QJsonArray list = obj.value("colors").toArray();
-    int tmp = obj.value("height").toInt();
-    if(tmp < 5 || tmp > 50){
-        tmp = 5;
-    }
-    m_rowsCount = tmp;
-    tmp = obj.value("width").toInt();
-    if(tmp < 5 || tmp > 50){
-        tmp = 5;
-    }
-    m_columnsCount = tmp;
+    m_data.clear();
+    int m_lastChoise = -1;
+    setScore(0);
+    setSteps(0);
+
+    auto defaultInit = [this](){
+        m_availableColors = {"red","green","blue"};
+        m_rowsCount = 5;
+        m_columnsCount = 5;
+    };
+
+    auto initFromConfig = [this]() -> bool{
+        QFile file("config.json");
+        if(!file.open(QIODevice::ReadOnly)){
+           qDebug() << "Cannot open config.json";
+           return false;
+           //run initialization by default
+        }
+        QJsonDocument doc = QJsonDocument::fromJson(file.readAll().data());
+        qDebug() << 1;
+        QJsonObject obj = doc.object();
+        qDebug() << 2;
+        QJsonArray list = obj.value("colors").toArray();
+        qDebug() << 3;
+        if(m_availableColors.size() > 0)
+            m_availableColors.clear();
+        for(auto color: list){
+            m_availableColors.append(color.toString());
+        }
+        qDebug() << m_availableColors;
+        if(m_availableColors.size() < 3)
+            return false;
+        int tmp = obj.value("height").toInt();
+        if(tmp < 5 || tmp > 50){
+            tmp = 5;
+        }
+        m_rowsCount = tmp;
+        tmp = obj.value("width").toInt();
+        if(tmp < 5 || tmp > 50){
+            tmp = 5;
+        }
+        m_columnsCount = tmp;
+        return true;
+    };
+    if(!initFromConfig())
+        defaultInit();
     qDebug() << m_rowsCount << m_columnsCount;
     int count = m_rowsCount*m_columnsCount;
     beginInsertRows(QModelIndex(),0,count-1);
     srand(time(NULL));
     for(int i = 0; i < count; i++){
-        m_data.append(list[std::rand()%list.count()].toString());
+        m_data.append(m_availableColors[std::rand()%m_availableColors.count()]);
     }
-    endInsertRows();
     QList<QList<int>> matchList;
     QMap<QString,QList<QList<int>>> map;
     for(auto& a: matchList){
@@ -90,6 +119,8 @@ void MyModel::populate(){
         clearMatches(map);
         matchList = hasMatches(0,m_data.size()-1,m_data);
     }
+    endInsertRows();
+
 }
 
 void MyModel::clearMatches(QMap<QString, QList<QList<int>>> &matches){
@@ -100,7 +131,7 @@ void MyModel::clearMatches(QMap<QString, QList<QList<int>>> &matches){
             int i = 2;
             while(i < match.length()){
                 do{
-                    newColor = m_data[std::rand()%m_data.size()].m_color;
+                    newColor = m_availableColors[std::rand()%m_availableColors.size()];
                 }while(newColor == colorKey);
                 m_data[match[i]] = newColor;
                 i+=3;
@@ -109,55 +140,69 @@ void MyModel::clearMatches(QMap<QString, QList<QList<int>>> &matches){
     }
 }
 
-void MyModel::removeMatches(){
-    qDebug() << "start";
-    auto elementIsEmpty = [this](int index){
-        return m_data[index].m_state == "deleted";
-    };
 
+void MyModel::removeMatches(){
+    QList<int> arr;
+    for(auto element: m_data){
+        arr << int(element.m_state);
+    }
+    qDebug() << "remove matches" << arr;
+    auto elementIsEmpty = [this](int index){
+        return m_data[index].m_state == ElementState::Deleted;
+    };
+    int scoreIncrease = 0;
     for(int j = 0; j < m_columnsCount;j++){
-//        qDebug() << 1;
         int deletedCount = 0;
         int i;
         int first;
         for(i = m_rowsCount-1;i >= 0; i--){
-//            qDebug() << 2;
             first = i*m_columnsCount+j;
             if(elementIsEmpty(first)){
-//                qDebug() << 3;
                 deletedCount++;
                 beginRemoveRows(QModelIndex(),first,first);
                 m_data.removeAt(first);
                 endRemoveRows();
             }
             else if(deletedCount != 0){
-//                qDebug() << 4;
                 int second = (i+deletedCount)*m_columnsCount+j-deletedCount;
                 beginMoveRows(QModelIndex(),first,first,QModelIndex(),second+1);
                 m_data.move(first,second);
                 endMoveRows();
             }
         }
-//        qDebug() << "deletedCount: " << deletedCount;
         for(i = 0;i < deletedCount; i++){
-//            qDebug() << 5;
             first = i*m_columnsCount+j;
+
             beginInsertRows(QModelIndex(),first,first);
-            m_data.insert(first,m_data[std::rand()%m_data.size()].m_color);
+            m_data.insert(first,Element{m_availableColors[std::rand()%m_availableColors.size()],ElementState::NotPressed});
             endInsertRows();
         }
+        scoreIncrease += deletedCount;
     }
+    setScore(m_score+scoreIncrease);
+}
 
-//    for(int i = 0; i < matches.count(); i++){
-//        beginRemoveRows(QModelIndex(),matches[i]-i,matches[i]-i);
-//        m_data.removeAt(matches[i]-i);
-//        endRemoveRows();
-//        qDebug() << i;
-//    }
+void MyModel::checkNewMatches(){
+    qDebug() << "check new matches";
+    QList<QList<int>> listOfLists = hasMatches(0,m_data.size()-1,m_data);
+    if(listOfLists.size() > 0){
+        QList<int> newMatches;
+        for(auto& list: listOfLists){
+            for(auto match: list){
+                newMatches.append(match);
+            }
+        }
+        emit matchesHappened(newMatches);
+    }
+    else{
+       if(!matchesIsPossible()){
+           emit gameOver();
+       }
+    }
 }
 
 QList<int> MyModel::swap(int a, int b){
-    if(a >= m_data.size() || b >= m_data.size())
+    if(a >= m_data.size() || b >= m_data.size() || a == b)
         return QList<int>();
     int j = a% m_columnsCount;
     int i = a/m_columnsCount;
@@ -246,11 +291,11 @@ bool MyModel::pressOn(int index){
             m_lastChoise = index;
         }
         else{
+            setSteps(m_steps+1);
             QList<int> matchesToRemove = swap(m_lastChoise,index);
             if(matchesToRemove.size() > 0){
-                setState(m_lastChoise, "nonSqueezed");
-                setState(index, "nonSqueezed");
-                emit rightChoise(matchesToRemove);
+                emit rightChoise(m_lastChoise,index);
+                emit matchesHappened(matchesToRemove);
             }
             else{
                 emit wrongChoise(m_lastChoise,index);
@@ -263,6 +308,8 @@ bool MyModel::pressOn(int index){
 }
 
 QList<QList<int>> MyModel::hasMatches(int leftTop, int rightBottom, const QList<Element>& area){
+//    leftTop = 0;
+//    rightBottom = area.size()-1;
     QList<QList<int>> list;
     if(leftTop < 0 || rightBottom >= area.size() ){
         qDebug() << "uncorrect params: " << "leftTop: " << leftTop << " rightBottom: " << rightBottom
@@ -331,5 +378,118 @@ int MyModel::getColumnsCount()const{
 }
 
 void MyModel::setState(int index, QString state){
-    setData(this->index(index),state,StateRole);
+    QString stateLower = state.toLower();
+    if(stateLower == "pressed"){
+        setState(index, ElementState::Pressed);
+        return;
+    }
+    else if(stateLower == "notpressed"){
+        setState(index, ElementState::NotPressed);
+        if(index == m_lastChoise){
+            m_lastChoise = -1;
+        }
+        return;
+    }
+    else if(stateLower == "wrong"){
+        setState(index, ElementState::Wrong);
+        return;
+    }
+    else if(stateLower == "deleted"){
+        setState(index, ElementState::Deleted);
+        return;
+    }
+    else{
+        qDebug() << QString("\"%1\" state does'nt exist").arg(state);
+        return;
+    }
+}
+
+void MyModel::setState(int index, ElementState state){
+    setData(this->index(index),int(state),StateRole);
+}
+
+bool MyModel::setData(const QModelIndex &index, const QVariant &value, int role){
+    if(!index.isValid()){
+        return false;
+    }
+    switch(role){
+    case StateRole: {
+        m_data[index.row()].m_state = ElementState(value.toInt());
+        dataChanged(index,index,QVector<int>() << StateRole);
+        return true;
+    }
+    default: return false;
+    }
+}
+
+bool MyModel::isElementPressed(int index) const{
+   if(m_data[index].m_state == ElementState::Pressed){
+       return true;
+   }
+   else{
+       return false;
+   }
+}
+
+bool MyModel::isElementDeleted(int index) const{
+   if(m_data[index].m_state == ElementState::Deleted){
+       return true;
+   }
+   else{
+       return false;
+   }
+}
+
+int MyModel::getScore() const{
+    return m_score;
+}
+
+
+int MyModel::getSteps() const{
+    return m_steps;
+}
+
+void MyModel::setScore(int score){
+   m_score = score;
+   emit scoreChanged();
+}
+
+void MyModel::setSteps(int steps){
+    m_steps = steps;
+    emit stepsChanged();
+}
+
+bool MyModel::matchesIsPossible(){
+    auto possibleAt = [this](int first, int second)->bool{
+        m_data.swapItemsAt(first,second);
+        QList<QList<int>> matches = hasMatches(0,m_data.size()-1,m_data);
+        m_data.swapItemsAt(first,second);
+        if(matches.size() > 0){
+            return true;
+        }
+        else{
+            return false;
+        }
+    };
+    for(int i = 0; i < m_rowsCount; i++){
+        for(int j = 0; j < m_columnsCount; j++){
+            if(i > 0){
+                if(possibleAt(j+i*m_columnsCount,j+(i-1)*m_columnsCount))
+                    return true;
+            }
+            if(j < m_columnsCount-1){
+                if(possibleAt(j+i*m_columnsCount,j+1+i*m_columnsCount))
+                    return true;
+            }
+            if(i < m_rowsCount-1){
+                if(possibleAt(j+i*m_columnsCount,j+(i+1)*m_columnsCount))
+                    return true;
+            }
+            if(j > 0){
+                if(possibleAt(j+i*m_columnsCount,j-1+i*m_columnsCount))
+                    return true;
+            }
+        }
+    }
+    return false;
 }

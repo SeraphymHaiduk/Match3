@@ -12,7 +12,35 @@ ApplicationWindow {
         id:header
         width: root.width
         height: root.height*0.2
-        color: "red"
+        color: "cyan"
+        Button{
+            height: parent.height*0.6
+            width: parent.width/4
+            anchors.centerIn: parent
+            text: "restart"
+            onPressed: {
+                gameBoard.model.populate()
+            }
+        }
+
+        Text{
+            id:score
+            anchors{
+                verticalCenter: parent.verticalCenter
+                horizontalCenter: parent.horizontalCenter
+                horizontalCenterOffset: -parent.width/4
+            }
+            text: "score: "+gameBoard.model.score
+        }
+        Text{
+            id:steps
+            anchors{
+                verticalCenter: parent.verticalCenter
+                horizontalCenter: parent.horizontalCenter
+                horizontalCenterOffset: parent.width/4
+            }
+            text: "steps: "+gameBoard.model.steps
+        }
     }
     GameBoard{
         id:gameBoard
@@ -23,5 +51,31 @@ ApplicationWindow {
         cellHeight: cellWidth
         height: parent.width/model.columnsCount > parent.height/model.rowsCount? parent.height : cellHeight*model.rowsCount
         width: parent.width/model.columnsCount < parent.height/model.rowsCount ? parent.width : cellWidth*model.columnsCount
+    }
+
+    Connections{
+        target: gameBoard.model
+        function onGameOver(){
+            loader.sourceComponent = gameOverComponent
+            loader.item.score = gameBoard.model.score
+            loader.item.steps = gameBoard.model.steps
+        }
+    }
+
+    Loader{
+        id: loader
+        anchors.fill: parent
+        sourceComponent: undefined
+    }
+
+    Component{
+        id: gameOverComponent
+        GameOverMenu{
+            anchors.fill: parent
+            onNewGame: {
+                gameBoard.model.populate()
+                loader.sourceComponent = undefined
+            }
+        }
     }
 }
