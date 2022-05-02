@@ -25,6 +25,8 @@ Rectangle {
             }
             Button{
                  anchors.horizontalCenter: parent.horizontalCenter
+                 width: parent.width*0.8
+                 height: width*0.5
                  text: "New Game"
                  onClicked: root.newGame()
             }

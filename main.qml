@@ -6,6 +6,8 @@ ApplicationWindow {
     id: root
     width:  640
     height: 480
+    minimumWidth: 400
+    minimumHeight: 400
     visible: true
     title: qsTr("Hello World")
     header: Rectangle{
@@ -14,6 +16,7 @@ ApplicationWindow {
         height: root.height*0.2
         color: "cyan"
         Button{
+            id: restartBt
             height: parent.height*0.6
             width: parent.width/4
             anchors.centerIn: parent
@@ -59,6 +62,7 @@ ApplicationWindow {
             loader.sourceComponent = gameOverComponent
             loader.item.score = gameBoard.model.score
             loader.item.steps = gameBoard.model.steps
+            restartBt.enabled = false
         }
     }
 
@@ -75,6 +79,7 @@ ApplicationWindow {
             onNewGame: {
                 gameBoard.model.populate()
                 loader.sourceComponent = undefined
+                restartBt.enabled = true
             }
         }
     }

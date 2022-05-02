@@ -73,13 +73,15 @@ private:
 
     int m_score, m_steps;
 
+    void setRowsCount(int value);
+    void setColumnsCount(int value);
     void setState(int index, ElementState state);
     void setSteps(int steps);
     void setScore(int score);
 
     QList<int> swap(int a, int b);
     void clearMatches(QMap<QString,QList<QList<int>>> &matches);
-    QList<QList<int>> hasMatches(int leftTop, int rightBottom, const QList<Element>& area);
+    QList<QList<int>> hasMatches(const QList<Element>& area);
     bool matchesIsPossible();
 };
 

@@ -53,7 +53,6 @@ GridView{
     Connections{
         target: root.model
         function onMatchesHappened(matches){
-            console.log("matches happened", matches)
             animationTimer.exec(root.moveDuration>root.unpressDuration? root.moveDuration : root.unpressDuration,function(){
                 for(var i = 0; i < matches.length;i++){
                     model.setState(matches[i],"deleted")

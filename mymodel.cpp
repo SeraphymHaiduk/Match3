@@ -8,9 +8,7 @@
 MyModel::MyModel(QObject* parent) : QAbstractListModel(parent)
 {
     qDebug() << "Model created";
-    do{
         populate();
-    }while(!matchesIsPossible());
     qDebug() << "data size: " << m_data.size();
 
 }
@@ -52,75 +50,82 @@ QHash <int,QByteArray> MyModel::roleNames() const{
 
 
 void MyModel::populate(){
-    m_data.clear();
-    int m_lastChoise = -1;
-    setScore(0);
-    setSteps(0);
+    do{
+        beginResetModel();
+        m_data.clear();
+        endResetModel();
+        int m_lastChoise = -1;
+        setScore(0);
+        setSteps(0);
+        setRowsCount(0);
+        setColumnsCount(0);
 
-    auto defaultInit = [this](){
-        m_availableColors = {"red","green","blue"};
-        m_rowsCount = 5;
-        m_columnsCount = 5;
-    };
+        auto defaultInit = [this](){
+            m_availableColors = {"red","green","blue"};
+            setRowsCount(5);
+            setColumnsCount(5);
+        };
 
-    auto initFromConfig = [this]() -> bool{
-        QFile file("config.json");
-        if(!file.open(QIODevice::ReadOnly)){
-           qDebug() << "Cannot open config.json";
-           return false;
-           //run initialization by default
+        auto initFromConfig = [this]() -> bool{
+            QFile file("config.json");
+            if(!file.open(QIODevice::ReadOnly)){
+               qDebug() << "Cannot open config.json";
+               return false;
+               //run initialization by default
+            }
+            QJsonDocument doc = QJsonDocument::fromJson(file.readAll().data());
+            qDebug() << 1;
+            QJsonObject obj = doc.object();
+            qDebug() << 2;
+            QJsonArray list = obj.value("colors").toArray();
+            qDebug() << 3;
+            if(m_availableColors.size() > 0)
+                m_availableColors.clear();
+            for(auto color: list){
+                m_availableColors.append(color.toString());
+            }
+            qDebug() << m_availableColors;
+            if(m_availableColors.size() < 3)
+                return false;
+            int tmp = obj.value("height").toInt();
+            if(tmp < 5 || tmp > 50){
+                tmp = 5;
+            }
+            setRowsCount(tmp);
+            tmp = obj.value("width").toInt();
+            if(tmp < 5 || tmp > 50){
+                tmp = 5;
+            }
+            setColumnsCount(tmp);
+            return true;
+        };
+
+        if(!initFromConfig())
+            defaultInit();
+
+        int count = m_rowsCount*m_columnsCount;
+
+        beginInsertRows(QModelIndex(),0,count-1);
+        srand(time(NULL));
+        for(int i = 0; i < count; i++){
+            m_data.append(m_availableColors[std::rand()%m_availableColors.count()]);
         }
-        QJsonDocument doc = QJsonDocument::fromJson(file.readAll().data());
-        qDebug() << 1;
-        QJsonObject obj = doc.object();
-        qDebug() << 2;
-        QJsonArray list = obj.value("colors").toArray();
-        qDebug() << 3;
-        if(m_availableColors.size() > 0)
-            m_availableColors.clear();
-        for(auto color: list){
-            m_availableColors.append(color.toString());
-        }
-        qDebug() << m_availableColors;
-        if(m_availableColors.size() < 3)
-            return false;
-        int tmp = obj.value("height").toInt();
-        if(tmp < 5 || tmp > 50){
-            tmp = 5;
-        }
-        m_rowsCount = tmp;
-        tmp = obj.value("width").toInt();
-        if(tmp < 5 || tmp > 50){
-            tmp = 5;
-        }
-        m_columnsCount = tmp;
-        return true;
-    };
-    if(!initFromConfig())
-        defaultInit();
-    qDebug() << m_rowsCount << m_columnsCount;
-    int count = m_rowsCount*m_columnsCount;
-    beginInsertRows(QModelIndex(),0,count-1);
-    srand(time(NULL));
-    for(int i = 0; i < count; i++){
-        m_data.append(m_availableColors[std::rand()%m_availableColors.count()]);
-    }
-    QList<QList<int>> matchList;
-    QMap<QString,QList<QList<int>>> map;
-    for(auto& a: matchList){
-        map[m_data[a.first()].m_color].append(a);
-    }
-    qDebug() << map;
-    matchList = hasMatches(0,m_data.size()-1,m_data);
-    while(matchList.size() != 0){
+        QList<QList<int>> matchList;
+        QMap<QString,QList<QList<int>>> map;
         for(auto& a: matchList){
             map[m_data[a.first()].m_color].append(a);
         }
-        clearMatches(map);
-        matchList = hasMatches(0,m_data.size()-1,m_data);
-    }
-    endInsertRows();
+        matchList = hasMatches(m_data);
+        while(matchList.size() != 0){
+            for(auto& a: matchList){
+                map[m_data[a.first()].m_color].append(a);
+            }
+            clearMatches(map);
+            matchList = hasMatches(m_data);
+        }
+        endInsertRows();
 
+    }while(!matchesIsPossible());
 }
 
 void MyModel::clearMatches(QMap<QString, QList<QList<int>>> &matches){
@@ -146,10 +151,11 @@ void MyModel::removeMatches(){
     for(auto element: m_data){
         arr << int(element.m_state);
     }
-    qDebug() << "remove matches" << arr;
+
     auto elementIsEmpty = [this](int index){
         return m_data[index].m_state == ElementState::Deleted;
     };
+
     int scoreIncrease = 0;
     for(int j = 0; j < m_columnsCount;j++){
         int deletedCount = 0;
@@ -184,7 +190,7 @@ void MyModel::removeMatches(){
 
 void MyModel::checkNewMatches(){
     qDebug() << "check new matches";
-    QList<QList<int>> listOfLists = hasMatches(0,m_data.size()-1,m_data);
+    QList<QList<int>> listOfLists = hasMatches(m_data);
     if(listOfLists.size() > 0){
         QList<int> newMatches;
         for(auto& list: listOfLists){
@@ -212,7 +218,7 @@ QList<int> MyModel::swap(int a, int b){
         QString tmp = tmpData[first].m_color;
         tmpData[first] = tmpData[second];
         tmpData[second] = tmp;
-        QList<QList<int>> listOfMatchLists = hasMatches(0,tmpData.size()-1,tmpData);
+        QList<QList<int>> listOfMatchLists = hasMatches(tmpData);
         QList<int> matches;
         for(auto& list: listOfMatchLists){
             for(int index: list){
@@ -307,9 +313,9 @@ bool MyModel::pressOn(int index){
     return false;
 }
 
-QList<QList<int>> MyModel::hasMatches(int leftTop, int rightBottom, const QList<Element>& area){
-//    leftTop = 0;
-//    rightBottom = area.size()-1;
+QList<QList<int>> MyModel::hasMatches(const QList<Element>& area){
+    int leftTop = 0;
+    int rightBottom = area.size()-1;
     QList<QList<int>> list;
     if(leftTop < 0 || rightBottom >= area.size() ){
         qDebug() << "uncorrect params: " << "leftTop: " << leftTop << " rightBottom: " << rightBottom
@@ -462,7 +468,7 @@ void MyModel::setSteps(int steps){
 bool MyModel::matchesIsPossible(){
     auto possibleAt = [this](int first, int second)->bool{
         m_data.swapItemsAt(first,second);
-        QList<QList<int>> matches = hasMatches(0,m_data.size()-1,m_data);
+        QList<QList<int>> matches = hasMatches(m_data);
         m_data.swapItemsAt(first,second);
         if(matches.size() > 0){
             return true;
@@ -492,4 +498,14 @@ bool MyModel::matchesIsPossible(){
         }
     }
     return false;
+}
+
+void MyModel::setRowsCount(int value){
+    m_rowsCount = value;
+    emit rowsCountChanged();
+}
+
+void MyModel::setColumnsCount(int value){
+    m_columnsCount = value;
+    emit columnsCountChanged();
 }
