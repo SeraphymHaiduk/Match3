@@ -1,7 +1,7 @@
 import QtQuick 2.0
 import QtQml 2.15
 import QtQuick.Controls 2.15
-import CppModel 1.0
+import Plugins.ModelPlugin 1.0
 
 GridView{
     id: root
@@ -52,28 +52,14 @@ GridView{
 
     Connections{
         target: root.model
-        function onMatchesHappened(matches){
+        function onMatchesHappened(){
             animationTimer.exec(root.moveDuration>root.unpressDuration? root.moveDuration : root.unpressDuration,function(){
-                for(var i = 0; i < matches.length;i++){
-                    model.setState(matches[i],"deleted")
-                }
+                root.model.readyToDisappear()
                 animationTimer.exec(root.deleteDuration,function(){
-                    root.model.removeMatches()
-                    root.model.checkNewMatches()
+                    root.model.readyToRemove()
                 })
             })
         }
-
-        function onRightChoise(firstChoise,secondChoise){
-            root.model.setState(firstChoise,"notPressed")
-            root.model.setState(secondChoise,"notPressed")
-        }
-
-        function onWrongChoise(firstChoise, secondChoise){
-            model.setState(firstChoise,"wrong")
-            model.setState(secondChoise,"wrong")
-        }
-
     }
 
     delegate: Item{
@@ -90,7 +76,7 @@ GridView{
             visible: true
             clip:true
             anchors.margins: tile.width*0.05
-            state: model.state
+            state: root.model.stateToString(model.state)
             states: [
                 State{
                     name: "unpressed"
@@ -134,11 +120,6 @@ GridView{
                         duration: root.pressDuration
                         easing.type: Easing.OutCirc
                     }
-                    onRunningChanged: {
-                        if(running === false){
-                            root.model.pressOn(index)
-                        }
-                    }
                 },
                 Transition {        //unpress
                     to: "notpressed"
@@ -172,16 +153,9 @@ GridView{
             MouseArea{
                 id: mouseArea
                 anchors.fill: parent
-                enabled: model.state === "deleted" || moveTransition.running ? false : true
+                enabled: model.state === MyModel.ElementState.Deleted || moveTransition.running ? false : true
                 hoverEnabled: false
-                onPressed: {
-                    if(model.state === "pressed"){
-                        root.model.setState(index,"notpressed")
-                    }
-                    else{
-                        root.model.setState(index,"pressed");
-                    }
-                }
+                onPressed: root.model.pressOn(index)
             }
         }
     }

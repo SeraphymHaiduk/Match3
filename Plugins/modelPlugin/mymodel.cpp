@@ -10,7 +10,13 @@ MyModel::MyModel(QObject* parent) : QAbstractListModel(parent)
     qDebug() << "Model created";
         populate();
     qDebug() << "data size: " << m_data.size();
-
+    QObject::connect(this,&MyModel::readyToDisappear,[this](){
+        for(auto& element: m_matchesToRemove){
+            setState(element,ElementState::Deleted);
+        }
+        m_matchesToRemove.clear();
+    });
+    QObject::connect(this,&MyModel::readyToRemove,this,&MyModel::removeMatches);
 }
 
 int MyModel::rowCount(const QModelIndex& parent) const{
@@ -20,6 +26,18 @@ int MyModel::rowCount(const QModelIndex& parent) const{
 
     return m_data.length();
 }
+
+QString MyModel::stateToString(ElementState state){
+    switch (state) {
+    case ElementState::Pressed: return "pressed";
+    case ElementState::NotPressed: return "notpressed";
+    case ElementState::Wrong: return "wrong";
+    case ElementState::Deleted: return "deleted";
+    default: qDebug() << QString("%1 state case not implemented in this function").arg(int(state));
+        return QString();
+    }
+}
+
 QVariant MyModel::data(const QModelIndex& index, int role) const{
     if(!index.isValid()){
         return QVariant();
@@ -27,16 +45,8 @@ QVariant MyModel::data(const QModelIndex& index, int role) const{
     switch (role){
     case ColorRole: return m_data.at(index.row()).m_color;
     case StateRole: {
-        ElementState state = m_data.at(index.row()).m_state;
-        switch (state) {
-        case ElementState::Pressed: return "pressed";
-        case ElementState::NotPressed: return "notpressed";
-        case ElementState::Wrong: return "wrong";
-        case ElementState::Deleted: return "deleted";
-        default: qDebug() << QString("%1 state case not implemented in this function").arg(int(state));
-            return QVariant();
+        return int(m_data.at(index.row()).m_state);
         }
-    }
     default: return QVariant();
     }
 }
@@ -147,8 +157,9 @@ void MyModel::clearMatches(QMap<QString, QList<QList<int>>> &matches){
 
 
 void MyModel::removeMatches(){
+    qDebug() << "remove Matches";
     QList<int> arr;
-    for(auto element: m_data){
+    for(auto& element: m_data){
         arr << int(element.m_state);
     }
 
@@ -186,21 +197,23 @@ void MyModel::removeMatches(){
         scoreIncrease += deletedCount;
     }
     setScore(m_score+scoreIncrease);
+    checkNewMatches();
 }
 
 void MyModel::checkNewMatches(){
     qDebug() << "check new matches";
     QList<QList<int>> listOfLists = hasMatches(m_data);
     if(listOfLists.size() > 0){
-        QList<int> newMatches;
         for(auto& list: listOfLists){
             for(auto match: list){
-                newMatches.append(match);
+                m_matchesToRemove.append(match);
             }
         }
-        emit matchesHappened(newMatches);
+        qDebug() << "new matches: " << m_matchesToRemove;
+        emit matchesHappened();
     }
     else{
+       qDebug() << "hasn't matches"    ;
        if(!matchesIsPossible()){
            emit gameOver();
        }
@@ -292,23 +305,30 @@ QList<int> MyModel::swap(int a, int b){
 }
 
 bool MyModel::pressOn(int index){
+    qDebug() << "pressOn";
     if(index != m_lastChoise){
         if(m_lastChoise == -1){
             m_lastChoise = index;
+            setState(index,ElementState::Pressed);
         }
         else{
             setSteps(m_steps+1);
-            QList<int> matchesToRemove = swap(m_lastChoise,index);
-            if(matchesToRemove.size() > 0){
-                emit rightChoise(m_lastChoise,index);
-                emit matchesHappened(matchesToRemove);
+            m_matchesToRemove = swap(m_lastChoise,index);
+            if(m_matchesToRemove.size() > 0){
+                setState(m_lastChoise,ElementState::NotPressed);
+                setState(index,ElementState::NotPressed);
+                emit matchesHappened();
             }
             else{
-                emit wrongChoise(m_lastChoise,index);
+                setState(m_lastChoise,ElementState::Wrong);
+                setState(index,ElementState::Wrong);
             }
             m_lastChoise = -1;
         }
         return true;
+    }
+    else{
+        setState(index,ElementState::NotPressed);
     }
     return false;
 }
@@ -383,33 +403,6 @@ int MyModel::getColumnsCount()const{
     return m_columnsCount;
 }
 
-void MyModel::setState(int index, QString state){
-    QString stateLower = state.toLower();
-    if(stateLower == "pressed"){
-        setState(index, ElementState::Pressed);
-        return;
-    }
-    else if(stateLower == "notpressed"){
-        setState(index, ElementState::NotPressed);
-        if(index == m_lastChoise){
-            m_lastChoise = -1;
-        }
-        return;
-    }
-    else if(stateLower == "wrong"){
-        setState(index, ElementState::Wrong);
-        return;
-    }
-    else if(stateLower == "deleted"){
-        setState(index, ElementState::Deleted);
-        return;
-    }
-    else{
-        qDebug() << QString("\"%1\" state does'nt exist").arg(state);
-        return;
-    }
-}
-
 void MyModel::setState(int index, ElementState state){
     setData(this->index(index),int(state),StateRole);
 }
@@ -421,30 +414,13 @@ bool MyModel::setData(const QModelIndex &index, const QVariant &value, int role)
     switch(role){
     case StateRole: {
         m_data[index.row()].m_state = ElementState(value.toInt());
-        dataChanged(index,index,QVector<int>() << StateRole);
+        emit dataChanged(index,index,QVector<int>() << StateRole);
         return true;
     }
     default: return false;
     }
 }
 
-bool MyModel::isElementPressed(int index) const{
-   if(m_data[index].m_state == ElementState::Pressed){
-       return true;
-   }
-   else{
-       return false;
-   }
-}
-
-bool MyModel::isElementDeleted(int index) const{
-   if(m_data[index].m_state == ElementState::Deleted){
-       return true;
-   }
-   else{
-       return false;
-   }
-}
 
 int MyModel::getScore() const{
     return m_score;
