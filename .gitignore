@@ -1,3 +1,4 @@
 **build/*
 **build-*
+Plugins/modelPlugin/build/*
 *CMakeLists.txt.user

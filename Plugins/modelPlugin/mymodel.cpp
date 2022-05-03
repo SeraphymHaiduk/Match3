@@ -442,9 +442,9 @@ void MyModel::setSteps(int steps){
 }
 
 bool MyModel::matchesIsPossible(){
-    auto possibleAt = [this](int first, int second)->bool{
+    auto possibleIfSwap = [this](int first, int second)->bool{
         m_data.swapItemsAt(first,second);
-        QList<QList<int>> matches = hasMatches(m_data);
+        QList<QList<int>> matches = hasMatches(m_data); //add finding in limited area
         m_data.swapItemsAt(first,second);
         if(matches.size() > 0){
             return true;
@@ -453,23 +453,48 @@ bool MyModel::matchesIsPossible(){
             return false;
         }
     };
-    for(int i = 0; i < m_rowsCount; i++){
-        for(int j = 0; j < m_columnsCount; j++){
-            if(i > 0){
-                if(possibleAt(j+i*m_columnsCount,j+(i-1)*m_columnsCount))
+
+    auto possibleAt = [this, possibleIfSwap](int i, int j) -> bool{
+        if(i > 0){
+                if(possibleIfSwap(j+i*m_columnsCount,j+(i-1)*m_columnsCount))
                     return true;
             }
             if(j < m_columnsCount-1){
-                if(possibleAt(j+i*m_columnsCount,j+1+i*m_columnsCount))
+                if(possibleIfSwap(j+i*m_columnsCount,j+1+i*m_columnsCount))
                     return true;
             }
             if(i < m_rowsCount-1){
-                if(possibleAt(j+i*m_columnsCount,j+(i+1)*m_columnsCount))
+                if(possibleIfSwap(j+i*m_columnsCount,j+(i+1)*m_columnsCount))
                     return true;
             }
             if(j > 0){
-                if(possibleAt(j+i*m_columnsCount,j-1+i*m_columnsCount))
+                if(possibleIfSwap(j+i*m_columnsCount,j-1+i*m_columnsCount))
                     return true;
+            }
+            return false;
+    };
+    for(int vertical = 0; vertical <= 1; vertical++){
+        int count1,count2;
+        if(vertical){
+            count1 = m_rowsCount;
+            count2 = m_columnsCount;
+        }
+        else{
+            count1 = m_columnsCount;
+            count2 = m_rowsCount;
+        }
+        for(int i = 0; i < count1; i++){
+            for(int j = 0; j < count2-2; j++){
+                if(m_data[j+i*count2].m_color == m_data[j+1+i*count2].m_color){ //[ ][|][|][ ][ }
+                    if(possibleAt(i,j+2)){
+                        return true;
+                    }
+                }
+                else if(m_data[j+i*count2].m_color == m_data[j+2+i*count2].m_color){ //[ ][|][ ][|][ }
+                    if(possibleAt(i,j+1)){
+                        return true;
+                    }
+                }
             }
         }
     }
