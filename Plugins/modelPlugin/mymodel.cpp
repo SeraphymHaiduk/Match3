@@ -454,24 +454,27 @@ bool MyModel::matchesIsPossible(){
         }
     };
 
-    auto possibleAt = [this, possibleIfSwap](int i, int j) -> bool{
-        if(i > 0){
-                if(possibleIfSwap(j+i*m_columnsCount,j+(i-1)*m_columnsCount))
-                    return true;
-            }
-            if(j < m_columnsCount-1){
-                if(possibleIfSwap(j+i*m_columnsCount,j+1+i*m_columnsCount))
-                    return true;
-            }
-            if(i < m_rowsCount-1){
-                if(possibleIfSwap(j+i*m_columnsCount,j+(i+1)*m_columnsCount))
-                    return true;
-            }
-            if(j > 0){
-                if(possibleIfSwap(j+i*m_columnsCount,j-1+i*m_columnsCount))
-                    return true;
-            }
+    auto possibleAt = [this, possibleIfSwap](unsigned int i,unsigned int j) -> bool{
+        qDebug() << "possibleAt i: " << i  << "j: "<< j;
+        if(i >= m_rowsCount || j >= m_columnsCount)
             return false;
+        if(i > 0){
+            if(possibleIfSwap(j+i*m_columnsCount,j+(i-1)*m_columnsCount))
+                return true;
+        }
+        if(j < m_columnsCount-1){
+            if(possibleIfSwap(j+i*m_columnsCount,j+1+i*m_columnsCount))
+                return true;
+        }
+        if(i < m_rowsCount-1){
+            if(possibleIfSwap(j+i*m_columnsCount,j+(i+1)*m_columnsCount))
+                return true;
+        }
+        if(j > 0){
+            if(possibleIfSwap(j+i*m_columnsCount,j-1+i*m_columnsCount))
+                return true;
+        }
+        return false;
     };
     for(int vertical = 0; vertical <= 1; vertical++){
         int count1,count2;
@@ -486,13 +489,13 @@ bool MyModel::matchesIsPossible(){
         for(int i = 0; i < count1; i++){
             for(int j = 0; j < count2-2; j++){
                 if(vertical){
-                    if(m_data[i+j*count2].m_color == m_data[i+1+j*count2].m_color){ //[ ][|][|][ ][ }
-                        if(possibleAt(j,i+2) || possibleAt(j,i-1)){
+                    if(m_data[i+j*count2].m_color == m_data[i+(j+1)*count2].m_color){ //[ ][|][|][ ][ }
+                        if(possibleAt(j+2,i) || possibleAt(j-1,i)){
                             return true;
                         }
                     }
-                    else if(m_data[i+j*count2].m_color == m_data[i+2+j*count2].m_color){ //[ ][|][ ][|][ }
-                        if(possibleAt(j,i+1)){
+                    else if(m_data[i+j*count2].m_color == m_data[i+(j+2)*count2].m_color){ //[ ][|][ ][|][ }
+                        if(possibleAt(j+1,i)){
                             return true;
                         }
                     }
