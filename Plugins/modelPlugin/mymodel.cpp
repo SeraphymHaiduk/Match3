@@ -485,16 +485,31 @@ bool MyModel::matchesIsPossible(){
         }
         for(int i = 0; i < count1; i++){
             for(int j = 0; j < count2-2; j++){
-                if(m_data[j+i*count2].m_color == m_data[j+1+i*count2].m_color){ //[ ][|][|][ ][ }
-                    if(possibleAt(i,j+2)){
-                        return true;
+                if(vertical){
+                    if(m_data[i+j*count2].m_color == m_data[i+1+j*count2].m_color){ //[ ][|][|][ ][ }
+                        if(possibleAt(j,i+2) || possibleAt(j,i-1)){
+                            return true;
+                        }
+                    }
+                    else if(m_data[i+j*count2].m_color == m_data[i+2+j*count2].m_color){ //[ ][|][ ][|][ }
+                        if(possibleAt(j,i+1)){
+                            return true;
+                        }
                     }
                 }
-                else if(m_data[j+i*count2].m_color == m_data[j+2+i*count2].m_color){ //[ ][|][ ][|][ }
-                    if(possibleAt(i,j+1)){
-                        return true;
+                else{
+                    if(m_data[j+i*count2].m_color == m_data[j+1+i*count2].m_color){ //[ ][|][|][ ][ }
+                        if(possibleAt(i,j+2) || possibleAt(i,j-1)){
+                            return true;
+                        }
+                    }
+                    else if(m_data[j+i*count2].m_color == m_data[j+2+i*count2].m_color){ //[ ][|][ ][|][ }
+                        if(possibleAt(i,j+1)){
+                            return true;
+                        }
                     }
                 }
+
             }
         }
     }
