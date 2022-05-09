@@ -58,9 +58,10 @@ signals:
     void scoreChanged();
     void stepsChanged();
 
-    void wrongChoise(int firstChoise, int secondChoise);
-    void rightChoise(int firstChoise, int secondChoise);
+    void wrongChoise();
+    void rightChoise();
     void matchesHappened();
+    void matchesNotHappened();
 
     void readyToDisappear();
     void readyToRemove();

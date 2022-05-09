@@ -22,8 +22,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_MyModel_t {
-    QByteArrayData data[29];
-    char stringdata0[323];
+    QByteArrayData data[28];
+    char stringdata0[317];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -39,34 +39,33 @@ QT_MOC_LITERAL(3, 26, 19), // "columnsCountChanged"
 QT_MOC_LITERAL(4, 46, 12), // "scoreChanged"
 QT_MOC_LITERAL(5, 59, 12), // "stepsChanged"
 QT_MOC_LITERAL(6, 72, 11), // "wrongChoise"
-QT_MOC_LITERAL(7, 84, 11), // "firstChoise"
-QT_MOC_LITERAL(8, 96, 12), // "secondChoise"
-QT_MOC_LITERAL(9, 109, 11), // "rightChoise"
-QT_MOC_LITERAL(10, 121, 15), // "matchesHappened"
-QT_MOC_LITERAL(11, 137, 16), // "readyToDisappear"
-QT_MOC_LITERAL(12, 154, 13), // "readyToRemove"
-QT_MOC_LITERAL(13, 168, 8), // "gameOver"
-QT_MOC_LITERAL(14, 177, 8), // "populate"
-QT_MOC_LITERAL(15, 186, 7), // "pressOn"
-QT_MOC_LITERAL(16, 194, 5), // "index"
-QT_MOC_LITERAL(17, 200, 13), // "stateToString"
-QT_MOC_LITERAL(18, 214, 21), // "MyModel::ElementState"
-QT_MOC_LITERAL(19, 236, 5), // "state"
-QT_MOC_LITERAL(20, 242, 9), // "rowsCount"
-QT_MOC_LITERAL(21, 252, 12), // "columnsCount"
-QT_MOC_LITERAL(22, 265, 5), // "score"
-QT_MOC_LITERAL(23, 271, 5), // "steps"
-QT_MOC_LITERAL(24, 277, 12), // "ElementState"
-QT_MOC_LITERAL(25, 290, 7), // "Pressed"
-QT_MOC_LITERAL(26, 298, 10), // "NotPressed"
-QT_MOC_LITERAL(27, 309, 5), // "Wrong"
-QT_MOC_LITERAL(28, 315, 7) // "Deleted"
+QT_MOC_LITERAL(7, 84, 11), // "rightChoise"
+QT_MOC_LITERAL(8, 96, 15), // "matchesHappened"
+QT_MOC_LITERAL(9, 112, 18), // "matchesNotHappened"
+QT_MOC_LITERAL(10, 131, 16), // "readyToDisappear"
+QT_MOC_LITERAL(11, 148, 13), // "readyToRemove"
+QT_MOC_LITERAL(12, 162, 8), // "gameOver"
+QT_MOC_LITERAL(13, 171, 8), // "populate"
+QT_MOC_LITERAL(14, 180, 7), // "pressOn"
+QT_MOC_LITERAL(15, 188, 5), // "index"
+QT_MOC_LITERAL(16, 194, 13), // "stateToString"
+QT_MOC_LITERAL(17, 208, 21), // "MyModel::ElementState"
+QT_MOC_LITERAL(18, 230, 5), // "state"
+QT_MOC_LITERAL(19, 236, 9), // "rowsCount"
+QT_MOC_LITERAL(20, 246, 12), // "columnsCount"
+QT_MOC_LITERAL(21, 259, 5), // "score"
+QT_MOC_LITERAL(22, 265, 5), // "steps"
+QT_MOC_LITERAL(23, 271, 12), // "ElementState"
+QT_MOC_LITERAL(24, 284, 7), // "Pressed"
+QT_MOC_LITERAL(25, 292, 10), // "NotPressed"
+QT_MOC_LITERAL(26, 303, 5), // "Wrong"
+QT_MOC_LITERAL(27, 309, 7) // "Deleted"
 
     },
     "MyModel\0rowsCountChanged\0\0columnsCountChanged\0"
     "scoreChanged\0stepsChanged\0wrongChoise\0"
-    "firstChoise\0secondChoise\0rightChoise\0"
-    "matchesHappened\0readyToDisappear\0"
+    "rightChoise\0matchesHappened\0"
+    "matchesNotHappened\0readyToDisappear\0"
     "readyToRemove\0gameOver\0populate\0pressOn\0"
     "index\0stateToString\0MyModel::ElementState\0"
     "state\0rowsCount\0columnsCount\0score\0"
@@ -81,37 +80,39 @@ static const uint qt_meta_data_MyModel[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-      13,   14, // methods
-       4,  104, // properties
-       1,  120, // enums/sets
+      14,   14, // methods
+       4,  102, // properties
+       1,  118, // enums/sets
        0,    0, // constructors
        0,       // flags
-      10,       // signalCount
+      11,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    0,   79,    2, 0x06 /* Public */,
-       3,    0,   80,    2, 0x06 /* Public */,
-       4,    0,   81,    2, 0x06 /* Public */,
-       5,    0,   82,    2, 0x06 /* Public */,
-       6,    2,   83,    2, 0x06 /* Public */,
-       9,    2,   88,    2, 0x06 /* Public */,
-      10,    0,   93,    2, 0x06 /* Public */,
-      11,    0,   94,    2, 0x06 /* Public */,
-      12,    0,   95,    2, 0x06 /* Public */,
-      13,    0,   96,    2, 0x06 /* Public */,
+       1,    0,   84,    2, 0x06 /* Public */,
+       3,    0,   85,    2, 0x06 /* Public */,
+       4,    0,   86,    2, 0x06 /* Public */,
+       5,    0,   87,    2, 0x06 /* Public */,
+       6,    0,   88,    2, 0x06 /* Public */,
+       7,    0,   89,    2, 0x06 /* Public */,
+       8,    0,   90,    2, 0x06 /* Public */,
+       9,    0,   91,    2, 0x06 /* Public */,
+      10,    0,   92,    2, 0x06 /* Public */,
+      11,    0,   93,    2, 0x06 /* Public */,
+      12,    0,   94,    2, 0x06 /* Public */,
 
  // methods: name, argc, parameters, tag, flags
-      14,    0,   97,    2, 0x02 /* Public */,
-      15,    1,   98,    2, 0x02 /* Public */,
-      17,    1,  101,    2, 0x02 /* Public */,
+      13,    0,   95,    2, 0x02 /* Public */,
+      14,    1,   96,    2, 0x02 /* Public */,
+      16,    1,   99,    2, 0x02 /* Public */,
 
  // signals: parameters
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
-    QMetaType::Void, QMetaType::Int, QMetaType::Int,    7,    8,
-    QMetaType::Void, QMetaType::Int, QMetaType::Int,    7,    8,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -119,14 +120,14 @@ static const uint qt_meta_data_MyModel[] = {
 
  // methods: parameters
     QMetaType::Void,
-    QMetaType::Bool, QMetaType::Int,   16,
-    QMetaType::QString, 0x80000000 | 18,   19,
+    QMetaType::Bool, QMetaType::Int,   15,
+    QMetaType::QString, 0x80000000 | 17,   18,
 
  // properties: name, type, flags
+      19, QMetaType::Int, 0x00495001,
       20, QMetaType::Int, 0x00495001,
       21, QMetaType::Int, 0x00495001,
       22, QMetaType::Int, 0x00495001,
-      23, QMetaType::Int, 0x00495001,
 
  // properties: notify_signal_id
        0,
@@ -135,13 +136,13 @@ static const uint qt_meta_data_MyModel[] = {
        3,
 
  // enums: name, alias, flags, count, data
-      24,   24, 0x2,    4,  125,
+      23,   23, 0x2,    4,  123,
 
  // enum data: key, value
-      25, uint(MyModel::ElementState::Pressed),
-      26, uint(MyModel::ElementState::NotPressed),
-      27, uint(MyModel::ElementState::Wrong),
-      28, uint(MyModel::ElementState::Deleted),
+      24, uint(MyModel::ElementState::Pressed),
+      25, uint(MyModel::ElementState::NotPressed),
+      26, uint(MyModel::ElementState::Wrong),
+      27, uint(MyModel::ElementState::Deleted),
 
        0        // eod
 };
@@ -156,16 +157,17 @@ void MyModel::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, voi
         case 1: _t->columnsCountChanged(); break;
         case 2: _t->scoreChanged(); break;
         case 3: _t->stepsChanged(); break;
-        case 4: _t->wrongChoise((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
-        case 5: _t->rightChoise((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2]))); break;
+        case 4: _t->wrongChoise(); break;
+        case 5: _t->rightChoise(); break;
         case 6: _t->matchesHappened(); break;
-        case 7: _t->readyToDisappear(); break;
-        case 8: _t->readyToRemove(); break;
-        case 9: _t->gameOver(); break;
-        case 10: _t->populate(); break;
-        case 11: { bool _r = _t->pressOn((*reinterpret_cast< int(*)>(_a[1])));
+        case 7: _t->matchesNotHappened(); break;
+        case 8: _t->readyToDisappear(); break;
+        case 9: _t->readyToRemove(); break;
+        case 10: _t->gameOver(); break;
+        case 11: _t->populate(); break;
+        case 12: { bool _r = _t->pressOn((*reinterpret_cast< int(*)>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 12: { QString _r = _t->stateToString((*reinterpret_cast< MyModel::ElementState(*)>(_a[1])));
+        case 13: { QString _r = _t->stateToString((*reinterpret_cast< MyModel::ElementState(*)>(_a[1])));
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
@@ -200,14 +202,14 @@ void MyModel::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, voi
             }
         }
         {
-            using _t = void (MyModel::*)(int , int );
+            using _t = void (MyModel::*)();
             if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::wrongChoise)) {
                 *result = 4;
                 return;
             }
         }
         {
-            using _t = void (MyModel::*)(int , int );
+            using _t = void (MyModel::*)();
             if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::rightChoise)) {
                 *result = 5;
                 return;
@@ -222,22 +224,29 @@ void MyModel::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, voi
         }
         {
             using _t = void (MyModel::*)();
-            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::readyToDisappear)) {
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::matchesNotHappened)) {
                 *result = 7;
                 return;
             }
         }
         {
             using _t = void (MyModel::*)();
-            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::readyToRemove)) {
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::readyToDisappear)) {
                 *result = 8;
                 return;
             }
         }
         {
             using _t = void (MyModel::*)();
-            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::gameOver)) {
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::readyToRemove)) {
                 *result = 9;
+                return;
+            }
+        }
+        {
+            using _t = void (MyModel::*)();
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&MyModel::gameOver)) {
+                *result = 10;
                 return;
             }
         }
@@ -289,13 +298,13 @@ int MyModel::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 13)
+        if (_id < 14)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 13;
+        _id -= 14;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 13)
+        if (_id < 14)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 13;
+        _id -= 14;
     }
 #ifndef QT_NO_PROPERTIES
     else if (_c == QMetaObject::ReadProperty || _c == QMetaObject::WriteProperty
@@ -342,17 +351,15 @@ void MyModel::stepsChanged()
 }
 
 // SIGNAL 4
-void MyModel::wrongChoise(int _t1, int _t2)
+void MyModel::wrongChoise()
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
-    QMetaObject::activate(this, &staticMetaObject, 4, _a);
+    QMetaObject::activate(this, &staticMetaObject, 4, nullptr);
 }
 
 // SIGNAL 5
-void MyModel::rightChoise(int _t1, int _t2)
+void MyModel::rightChoise()
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
-    QMetaObject::activate(this, &staticMetaObject, 5, _a);
+    QMetaObject::activate(this, &staticMetaObject, 5, nullptr);
 }
 
 // SIGNAL 6
@@ -362,21 +369,27 @@ void MyModel::matchesHappened()
 }
 
 // SIGNAL 7
-void MyModel::readyToDisappear()
+void MyModel::matchesNotHappened()
 {
     QMetaObject::activate(this, &staticMetaObject, 7, nullptr);
 }
 
 // SIGNAL 8
-void MyModel::readyToRemove()
+void MyModel::readyToDisappear()
 {
     QMetaObject::activate(this, &staticMetaObject, 8, nullptr);
 }
 
 // SIGNAL 9
-void MyModel::gameOver()
+void MyModel::readyToRemove()
 {
     QMetaObject::activate(this, &staticMetaObject, 9, nullptr);
+}
+
+// SIGNAL 10
+void MyModel::gameOver()
+{
+    QMetaObject::activate(this, &staticMetaObject, 10, nullptr);
 }
 QT_WARNING_POP
 QT_END_MOC_NAMESPACE

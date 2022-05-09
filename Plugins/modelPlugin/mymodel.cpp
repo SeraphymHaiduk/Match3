@@ -64,7 +64,7 @@ void MyModel::populate(){
         beginResetModel();
         m_data.clear();
         endResetModel();
-        int m_lastChoise = -1;
+        m_lastChoise = -1;
         setScore(0);
         setSteps(0);
         setRowsCount(0);
@@ -139,6 +139,7 @@ void MyModel::populate(){
 }
 
 void MyModel::clearMatches(QMap<QString, QList<QList<int>>> &matches){
+    qDebug() << matches;
     QList<QString> keys = matches.keys();
     QString newColor;
     for(QString& colorKey: keys){
@@ -214,6 +215,7 @@ void MyModel::checkNewMatches(){
     }
     else{
        qDebug() << "hasn't matches"    ;
+       emit matchesNotHappened();
        if(!matchesIsPossible()){
            emit gameOver();
        }
@@ -305,7 +307,7 @@ QList<int> MyModel::swap(int a, int b){
 }
 
 bool MyModel::pressOn(int index){
-    qDebug() << "pressOn";
+    qDebug() << "pressOn index: " << index;
     if(index != m_lastChoise){
         if(m_lastChoise == -1){
             m_lastChoise = index;
@@ -318,10 +320,12 @@ bool MyModel::pressOn(int index){
                 setState(m_lastChoise,ElementState::NotPressed);
                 setState(index,ElementState::NotPressed);
                 emit matchesHappened();
+                emit rightChoise();         //unused
             }
             else{
                 setState(m_lastChoise,ElementState::Wrong);
                 setState(index,ElementState::Wrong);
+                emit wrongChoise();         //unused
             }
             m_lastChoise = -1;
         }
@@ -329,6 +333,7 @@ bool MyModel::pressOn(int index){
     }
     else{
         setState(index,ElementState::NotPressed);
+        m_lastChoise = -1;
     }
     return false;
 }

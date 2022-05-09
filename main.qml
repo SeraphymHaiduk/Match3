@@ -47,13 +47,6 @@ ApplicationWindow {
     }
     GameBoard{
         id:gameBoard
-        anchors{
-            centerIn:parent
-        }
-        cellWidth: parent.width/model.columnsCount < parent.height/model.rowsCount ? parent.width/model.columnsCount : parent.height/model.rowsCount
-        cellHeight: cellWidth
-        height: parent.width/model.columnsCount > parent.height/model.rowsCount? parent.height : cellHeight*model.rowsCount
-        width: parent.width/model.columnsCount < parent.height/model.rowsCount ? parent.width : cellWidth*model.columnsCount
     }
 
     Connections{
