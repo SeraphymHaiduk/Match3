@@ -1,4 +1,0 @@
-/home/shaiduk/Programming/Match3/Plugins/ModelPlugin/build/CMakeFiles/rebuild_cache.dir
-/home/shaiduk/Programming/Match3/Plugins/ModelPlugin/build/CMakeFiles/edit_cache.dir
-/home/shaiduk/Programming/Match3/Plugins/ModelPlugin/build/CMakeFiles/ModelPlugin.dir
-/home/shaiduk/Programming/Match3/Plugins/ModelPlugin/build/CMakeFiles/ModelPlugin_autogen.dir
