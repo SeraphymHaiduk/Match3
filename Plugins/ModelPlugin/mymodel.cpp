@@ -4,11 +4,29 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <random>
+#include <QCoreApplication>
 #include <QFile>
 MyModel::MyModel(QObject* parent) : QAbstractListModel(parent)
 {
+    m_configPath = QCoreApplication::applicationDirPath() + "/config.json";
+    auto watchToConfig = [this](){
+        if(!m_fileWatcher.addPath(m_configPath)){
+            qDebug() << m_fileWatcher.files() << " doesn't watch";
+        }
+        else{
+            qDebug() << m_fileWatcher.files() << "being watched";
+        }
+    };
+    watchToConfig();
+    QObject::connect(&m_fileWatcher, &QFileSystemWatcher::fileChanged,this,[=](){
+        qDebug() << "Config changed";
+        initParams();
+        refillModel();
+        watchToConfig();
+    });
     qDebug() << "Model created";
-        populate();
+        initParams();
+        fillModel();
     qDebug() << "data size: " << m_data.size();
     QObject::connect(this,&MyModel::readyToDisappear,[this](){
         for(auto& element: m_matchesToRemove){
@@ -50,83 +68,105 @@ QHash <int,QByteArray> MyModel::roleNames() const{
 }
 
 
-void MyModel::populate(){
-    do{
-        beginResetModel();
-        m_data.clear();
-        endResetModel();
-        m_lastChoise = -1;
-        setScore(0);
-        setSteps(0);
-        setRowsCount(0);
-        setColumnsCount(0);
+void MyModel::initParams(){
+    m_lastChoise = -1;
+    setScore(0);
+    setSteps(0);
+    setRowsCount(0);
+    setColumnsCount(0);
+    auto defaultInit = [this](){
+        qDebug() << "Default init";
+        m_availableColors = {"red","green","blue"};
+        setRowsCount(5);
+        setColumnsCount(5);
+    };
 
-        auto defaultInit = [this](){
-            m_availableColors = {"red","green","blue"};
-            setRowsCount(5);
-            setColumnsCount(5);
-        };
-
-        auto initFromConfig = [this]() -> bool{
-            QFile file("config.json");
-            if(!file.open(QIODevice::ReadOnly)){
-               qDebug() << "Cannot open config.json";
-               return false;
-               //run initialization by default
-            }
-            QJsonDocument doc = QJsonDocument::fromJson(file.readAll().data());
-            qDebug() << 1;
-            QJsonObject obj = doc.object();
-            qDebug() << 2;
-            QJsonArray list = obj.value("colors").toArray();
-            qDebug() << 3;
-            if(m_availableColors.size() > 0)
-                m_availableColors.clear();
-            for(auto color: list){
-                m_availableColors.append(color.toString());
-            }
-            qDebug() << m_availableColors;
-            if(m_availableColors.size() < 3)
-                return false;
-            int tmp = obj.value("height").toInt();
-            if(tmp < 5 || tmp > 50){
-                tmp = 5;
-            }
-            setRowsCount(tmp);
-            tmp = obj.value("width").toInt();
-            if(tmp < 5 || tmp > 50){
-                tmp = 5;
-            }
-            setColumnsCount(tmp);
-            return true;
-        };
-
-        if(!initFromConfig())
-            defaultInit();
-
-        int count = m_rowsCount*m_columnsCount;
-
-        beginInsertRows(QModelIndex(),0,count-1);
-        srand(time(NULL));
-        for(int i = 0; i < count; i++){
-            m_data.append(m_availableColors[std::rand()%m_availableColors.count()]);
+    auto initFromConfig = [this]() -> bool{
+        QFile file(m_configPath);
+        if(!file.open(QIODevice::ReadOnly)){
+            qDebug() << "Cannot open" << m_configPath;
+            return false;
+            //run initialization by default
         }
-        QList<QList<int>> matchList;
-        QMap<QString,QList<QList<int>>> map;
-        for(auto& a: matchList){
-            map[m_data[a.first()].m_color].append(a);
-        }
-        matchList = hasMatches(m_data);
-        while(matchList.size() != 0){
-            for(auto& a: matchList){
-                map[m_data[a.first()].m_color].append(a);
-            }
-            clearMatches(map);
-            matchList = hasMatches(m_data);
-        }
-        endInsertRows();
+        QByteArray fileBA = file.readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(fileBA.data());
+        if(doc.isNull())
+            return false;
+        QJsonObject obj = doc.object();
+        if(obj.isEmpty())
+            return false;
+        QJsonArray list = obj.value("colors").toArray();
+        if(list.size() < 3)
+            return false;
 
-    }while(!matchesIsPossible());
+        if(m_availableColors.size() > 0)
+            m_availableColors.clear();
+        for(auto color: list){
+            m_availableColors.append(color.toString());
+        }
+        int tmp = obj.value("height").toInt();
+        if(tmp < 5 || tmp > 50){
+            tmp = 5;
+        }
+        setRowsCount(tmp);
+        tmp = obj.value("width").toInt();
+        if(tmp < 5 || tmp > 50){
+            tmp = 5;
+        }
+        setColumnsCount(tmp);
+        return true;
+    };
+
+    if(!initFromConfig())
+        defaultInit();
+}
+
+void MyModel::fillModel(){
+    auto matchesAvailable = [this](int i, int j) -> bool {
+        QString currentColor = m_data[j+i*m_columnsCount].m_color;
+        if(i > 1){
+            if(m_data[j+(i-1)*m_columnsCount].m_color == currentColor && m_data[j+(i-2)*m_columnsCount].m_color == currentColor)
+                return true;
+        }
+        if(j > 1){
+            if(m_data[j-1+i*m_columnsCount].m_color == currentColor && m_data[j-2+i*m_columnsCount].m_color == currentColor)
+                return true;
+        }
+        return false;
+    };
+    auto fill = [this,matchesAvailable]() -> bool{
+        qDebug() << "try to fill";
+        for(int i = 0; i < m_rowsCount; i++){
+            for(int j = 0; j < m_columnsCount; j++){
+                m_data.append(m_availableColors[std::rand()%m_availableColors.size()]);
+                int c = 0;
+                while(matchesAvailable(i,j)){
+                    m_data[j+i*m_columnsCount].m_color = m_availableColors[c];
+                    c++;
+                    if(c == m_availableColors.size())
+                        return false;
+                }
+            }
+        }
+        return true;//matchesIsPossible() ;
+    };
+    int attempts = 1;
+    while(!fill()){
+        if(attempts == 10){
+            qDebug() << "To many attempts used to fill model";
+            return;
+        }
+        attempts++;
+    }
+}
+
+void MyModel::refillModel(){
+    beginResetModel();
+    m_data.clear();
+    endResetModel();
+    beginInsertRows(QModelIndex(),0,m_rowsCount*m_columnsCount-1);
+    fillModel();
+    endInsertRows();
 }
 
 void MyModel::clearMatches(QMap<QString, QList<QList<int>>> &matches){
@@ -194,7 +234,7 @@ void MyModel::removeMatches(){
 
 void MyModel::checkNewMatches(){
     qDebug() << "check new matches";
-    QList<QList<int>> listOfLists = hasMatches(m_data);
+    QList<QList<int>> listOfLists = availableMatches(0,m_data.size()-1);
     if(listOfLists.size() > 0){
         for(auto& list: listOfLists){
             for(auto match: list){
@@ -205,7 +245,7 @@ void MyModel::checkNewMatches(){
         emit matchesHappened();
     }
     else{
-       qDebug() << "hasn't matches"    ;
+       qDebug() << "hasn't matches";
        emit matchesNotHappened();
        if(!matchesIsPossible()){
            emit gameOver();
@@ -220,11 +260,13 @@ QList<int> MyModel::swap(int a, int b){
     int i = a/m_columnsCount;
     int first, second;
     auto possibleMatches = [this](int first,int second) -> QList<int>{
-        QList<Element> tmpData = m_data;
-        QString tmp = tmpData[first].m_color;
-        tmpData[first] = tmpData[second];
-        tmpData[second] = tmp;
-        QList<QList<int>> listOfMatchLists = hasMatches(tmpData);
+        QString tmp = m_data[first].m_color;
+        m_data[first] = m_data[second];
+        m_data[second] = tmp;
+        QList<QList<int>> listOfMatchLists = availableMatches(first,second);
+        tmp = m_data[first].m_color;
+        m_data[first] = m_data[second];
+        m_data[second] = tmp;
         QList<int> matches;
         for(auto& list: listOfMatchLists){
             for(int index: list){
@@ -329,20 +371,26 @@ bool MyModel::pressOn(int index){
     return false;
 }
 
-QList<QList<int>> MyModel::hasMatches(const QList<Element>& area){
-    int leftTop = 0;
-    int rightBottom = area.size()-1;
+QList<QList<int>> MyModel::availableMatches(int indexA, int indexB){
+    int minI,maxI,minJ,maxJ;
+    minI = indexA/m_columnsCount;
+    maxI = indexB/m_columnsCount;
+    if(minI > maxI)
+        std::swap(minI,maxI);
+    minJ = indexA%m_columnsCount;
+    maxJ = indexB%m_columnsCount;
+    if(minJ > maxJ)
+        std::swap(minJ,maxJ);
+
+    const QList<Element>& area = m_data;
     QList<QList<int>> list;
-    if(leftTop < 0 || rightBottom >= area.size() ){
-        qDebug() << "uncorrect params: " << "leftTop: " << leftTop << " rightBottom: " << rightBottom
-        << " m_columnsCount: " << m_columnsCount << " m_rowsCount " << m_rowsCount;
-        return list;
-    }
+
     int i1,j1,i2,j2;
-    i1 = leftTop/m_columnsCount;
-    j1 = leftTop%m_columnsCount;
-    i2 = rightBottom/m_columnsCount;
-    j2 = rightBottom%m_columnsCount;
+
+    i1 = minI - 2 < 0 ? 0 : minI - 2;
+    j1 = minJ - 2 < 0 ? 0 : minJ - 2;
+    i2 = maxI + 2 > m_rowsCount - 1 ? m_rowsCount - 1 : maxI + 2;
+    j2 = maxJ + 2 > m_columnsCount - 1 ? m_columnsCount - 1 : maxJ + 2;
     QList<int> tmpList;
     if((j2 - j1) >= 2){
         for(int i = i1; i <= i2; i++){      //find horizontal matches
@@ -435,65 +483,67 @@ void MyModel::setSteps(int steps){
 }
 
 bool MyModel::matchesIsPossible(){
-    auto possibleAt = [this](unsigned int i,unsigned int j, QString color) -> bool{
-        qDebug() << "possibleAt i: " << i  << "j: "<< j;
+    auto possibleAt = [this](unsigned int i,unsigned int j, QString& color,QString skipCheck) -> bool{
+        qDebug() << "check possibleAt i: " << i  << "j: "<< j;
         if(i >= m_rowsCount || j >= m_columnsCount)
             return false;
-        if(i > 0){
-            if(m_data[j+(i-1)*m_columnsCount].m_color == color)
+        if(i > 0 && !skipCheck.contains('t')){
+            if(m_data[j+(i-1)*m_columnsCount].m_color == color){
+                qDebug() << "top" << color << m_data[j+(i-1)*m_columnsCount].m_color;
                 return true;
+            }
         }
-        if(j < m_columnsCount-1){
-            if(m_data[j+1+i*m_columnsCount].m_color == color)
+        if(j < m_columnsCount-1 && !skipCheck.contains('r')){
+            if(m_data[j+1+i*m_columnsCount].m_color == color){
+                qDebug() << "right" << color << m_data[j+1+i*m_columnsCount].m_color;
                 return true;
+            }
         }
-        if(i < m_rowsCount-1){
-            if(m_data[j+(i+1)*m_columnsCount].m_color == color)
+        if(i < m_rowsCount-1 && !skipCheck.contains('b')){
+            if(m_data[j+(i+1)*m_columnsCount].m_color == color){
+                qDebug() << "bottom" << color << m_data[j+(i+1)*m_columnsCount].m_color;
                 return true;
+            }
         }
-        if(j > 0){
-            if(m_data[j-1+i*m_columnsCount].m_color == color)
+        if(j > 0 && !skipCheck.contains('l')){
+            if(m_data[j-1+i*m_columnsCount].m_color == color){
+                qDebug() << "left" << color << m_data[j-1+i*m_columnsCount].m_color;
                 return true;
+            }
         }
+        qDebug() << "hasn't possible matches";
         return false;
     };
-    for(int vertical = 0; vertical <= 1; vertical++){
-        int count1,count2;
-        if(vertical){
-            count1 = m_rowsCount;
-            count2 = m_columnsCount;
-        }
-        else{
-            count1 = m_columnsCount;
-            count2 = m_rowsCount;
-        }
-        for(int i = 0; i < count1; i++){
-            for(int j = 0; j < count2-2; j++){
-                if(vertical){
-                    if(m_data[i+j*count2].m_color == m_data[i+(j+1)*count2].m_color){ //[ ][|][|][ ][ }
-                        if(possibleAt(j+2,i, m_data[i+j*count2].m_color) || possibleAt(j-1,i,m_data[i+j*count2].m_color)){
-                            return true;
-                        }
-                    }
-                    else if(m_data[i+j*count2].m_color == m_data[i+(j+2)*count2].m_color){ //[ ][|][ ][|][ }
-                        if(possibleAt(j+1,i,m_data[i+j*count2].m_color)){
-                            return true;
-                        }
-                    }
+    QString currentColor;
+    qDebug() << "horizontal check";
+    for(int i = 0; i < m_rowsCount; i++){
+        for(int j = 0; j < m_columnsCount-2; j++){
+            currentColor = m_data[j+i*m_columnsCount].m_color;
+            if(currentColor == m_data[j+1+i*m_columnsCount].m_color){ //[ ][|][|][ ][ }
+                if(possibleAt(i,j+2, currentColor,"l") || possibleAt(i,j-1,currentColor,"r")){
+                    return true;
                 }
-                else{
-                    if(m_data[j+i*count2].m_color == m_data[j+1+i*count2].m_color){ //[ ][|][|][ ][ }
-                        if(possibleAt(i,j+2,m_data[i+j*count2].m_color) || possibleAt(i,j-1,m_data[i+j*count2].m_color)){
-                            return true;
-                        }
-                    }
-                    else if(m_data[j+i*count2].m_color == m_data[j+2+i*count2].m_color){ //[ ][|][ ][|][ }
-                        if(possibleAt(i,j+1,m_data[i+j*count2].m_color)){
-                            return true;
-                        }
-                    }
+            }
+            else if(currentColor == m_data[j+2+i*m_columnsCount].m_color){ //[ ][|][ ][|][ }
+                if(possibleAt(i,j+1,currentColor,"lr")){
+                    return true;
                 }
-
+            }
+        }
+    }
+    qDebug() << "vertical check";
+    for(int j = 0; j < m_columnsCount; j++){
+        for(int i = 0; i < m_rowsCount-2; i++){
+            currentColor = m_data[j+i*m_columnsCount].m_color;
+            if(currentColor == m_data[j+(i+1)*m_columnsCount].m_color){  //[ ][|][|][ ][ }
+                if(possibleAt(i+2,j,currentColor,"t") || possibleAt(j,i-1,currentColor,"b")){
+                    return true;
+                }
+            }
+            else if(currentColor == m_data[j+(i+2)*m_columnsCount].m_color){  //[ ][|][ ][|][ }
+                if(possibleAt(i+1,j,currentColor,"tb")){
+                    return true;
+                }
             }
         }
     }

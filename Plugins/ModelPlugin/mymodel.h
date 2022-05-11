@@ -3,9 +3,7 @@
 #include <QAbstractListModel>
 #include <QModelIndex>
 #include <QList>
-
-
-
+#include <QFileSystemWatcher>
 
 class MyModel: public QAbstractListModel
 {
@@ -15,7 +13,7 @@ class MyModel: public QAbstractListModel
     Q_PROPERTY(int score READ getScore NOTIFY scoreChanged)
     Q_PROPERTY(int steps READ getSteps NOTIFY stepsChanged);
 public:
-    MyModel(QObject* parent = 0);
+    MyModel(QObject* parent = nullptr);
     enum Roles : unsigned short int{
         ColorRole = Qt::UserRole+1,
         StateRole,
@@ -35,8 +33,7 @@ public:
     int getColumnsCount() const;
     int getScore() const;
     int getSteps() const;
-
-    Q_INVOKABLE void populate();
+    Q_INVOKABLE void refillModel();
     Q_INVOKABLE bool pressOn(int index);
     Q_INVOKABLE void setState(int index, int state);
     struct Element{
@@ -68,13 +65,19 @@ signals:
     void gameOver();
 private:
     QList<Element> m_data;
-    int m_lastChoise = -1;
     QList<QString> m_availableColors;
-    QList<int> m_matchesToRemove;
     int m_rowsCount, m_columnsCount;
+
+    int m_lastChoise = -1;
+    QList<int> m_matchesToRemove;
 
     int m_score, m_steps;
 
+    QString m_configPath;
+    QFileSystemWatcher m_fileWatcher;
+
+    void initParams();
+    void fillModel();
     void setRowsCount(int value);
     void setColumnsCount(int value);
     void setSteps(int steps);
@@ -85,7 +88,7 @@ private:
 
     QList<int> swap(int a, int b);
     void clearMatches(QMap<QString,QList<QList<int>>> &matches);
-    QList<QList<int>> hasMatches(const QList<Element>& area);
+    QList<QList<int>> availableMatches(int indexA, int indexB);
     bool matchesIsPossible();
 };
 

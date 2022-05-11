@@ -52,9 +52,6 @@ GridView{
             mouseHandler.enabled = true
         }
     }
-    model: MyModel{
-        id:gridModel
-    }
     interactive: false
 
 
@@ -138,7 +135,7 @@ GridView{
                         target: circle
                         parent: index === root.draggedItemIndex ? dndContainer : parent
                         x: index === root.draggedItemIndex ? root.draggedItemX : x
-                        y: index === root.draggedItemIndex ? root.draggedItemY : x
+                        y: index === root.draggedItemIndex ? root.draggedItemY : y
                         anchors.centerIn: index === root.draggedItemIndex ? undefined : parent
                     }
                     PropertyChanges {
@@ -206,7 +203,12 @@ GridView{
         onReleased: {
             if(root.draggedItemIndex !== -1){
                 root.model.setState(root.indexAt(mouseX,mouseY),MyModel.ElementState.Pressed)
-                root.model.pressOn(root.offsetIndex)
+                if(root.indexAt(mouseX,mouseY) === root.draggedItemIndex){
+                    root.model.pressOn(root.draggedItemIndex)
+                }
+                else{
+                    root.model.pressOn(root.offsetIndex)
+                }
                 root.draggedItemIndex = -1
             }
             root.offsetIndex = -1
@@ -216,7 +218,7 @@ GridView{
         onPositionChanged: {
             if(root.draggedItemIndex !== -1){
                 var j = root.draggedItemIndex%root.model.columnsCount
-                var i = Math.trunc(root.draggedItemIndex/root.model.rowsCount)
+                var i = Math.trunc(root.draggedItemIndex/root.model.columnsCount)
 
                 var normalX = cellWidth * j + (cellWidth-circleW)/2
                 var normalY = cellHeight * i + (cellHeight-circleH)/2
@@ -229,8 +231,8 @@ GridView{
                     xBigLimit = false
                 }
                 else{
-                    if(mouseX > (j+1) * cellWidth + cellWidth/6 ||
-                        mouseX < j * cellWidth + cellWidth/6){
+                    if(mouseX > (j+1) * cellWidth + cellWidth/8 ||
+                        mouseX < j * cellWidth + cellWidth/8){
                         xLittleLimit = false
                     }
                     else{
@@ -245,8 +247,8 @@ GridView{
                     yBigLimit = false
                 }
                 else{
-                    if(mouseY < i * cellHeight - cellHeight/6 ||
-                       mouseY > (i+1) * cellHeight + cellHeight/6 ){
+                    if(mouseY < i * cellHeight - cellHeight/8 ||
+                       mouseY > (i+1) * cellHeight + cellHeight/8 ){
                         yLittleLimit = false
                     }
                     else{
@@ -261,11 +263,11 @@ GridView{
                 centerY = root.isOffsetHorizontal
                 centerX = !root.isOffsetHorizontal
 
-                if(xBigLimit){
+                if(xBigLimit && mouseX > 0+circleW/2 && mouseX < root.width - circleW/2){
                     root.draggedItemX = centerX ? normalX : mouseX - circleW/2
                     root.horizontalOffset = mouseX - (normalX + circleW/2)
                 }
-                if(yBigLimit){
+                if(yBigLimit && mouseY > 0+circleH/2 && mouseY < root.height - circleH/2){
                     root.draggedItemY = centerY ? normalY : mouseY - circleH/2
                     root.verticalOffset = mouseY - (normalY + circleH/2)
                 }

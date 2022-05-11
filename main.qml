@@ -21,8 +21,9 @@ ApplicationWindow {
             width: parent.width/4
             anchors.centerIn: parent
             text: "restart"
+            enabled: !loader.sourceComponent
             onPressed: {
-                gameBoard.model.populate()
+                gridModel.refillModel()
             }
         }
 
@@ -33,7 +34,7 @@ ApplicationWindow {
                 horizontalCenter: parent.horizontalCenter
                 horizontalCenterOffset: -parent.width/4
             }
-            text: "score: "+gameBoard.model.score
+            text: "score: " + gridModel.score
         }
         Text{
             id:steps
@@ -42,20 +43,23 @@ ApplicationWindow {
                 horizontalCenter: parent.horizontalCenter
                 horizontalCenterOffset: parent.width/4
             }
-            text: "steps: "+gameBoard.model.steps
+            text: "steps: " + gridModel.steps
         }
     }
     GameBoard{
         id:gameBoard
+        model: gridModel
+    }
+    MyModel{
+        id: gridModel
     }
 
     Connections{
-        target: gameBoard.model
+        target: gridModel
         function onGameOver(){
             loader.sourceComponent = gameOverComponent
-            loader.item.score = gameBoard.model.score
-            loader.item.steps = gameBoard.model.steps
-            restartBt.enabled = false
+            loader.item.score = gridModel.score
+            loader.item.steps = gridModel.steps
         }
     }
 
@@ -70,9 +74,8 @@ ApplicationWindow {
         GameOverMenu{
             anchors.fill: parent
             onNewGame: {
-                gameBoard.model.populate()
+                gridModel.refillModel()
                 loader.sourceComponent = undefined
-                restartBt.enabled = true
             }
         }
     }
